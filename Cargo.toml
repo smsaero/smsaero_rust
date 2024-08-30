@@ -1,0 +1,19 @@
+[package]
+name = "smsaero"
+version = "1.0.0"
+authors = ["Admin <admin@smsaero.ru>"]
+edition = "2021"
+description = "Library for sending SMS messages using the SmsAero API"
+license = "MIT"
+repository = "https://github.com/smsaero/smsaero_rust"
+documentation = "https://smsaero.ru/integration/documentation/api/"
+homepage = "https://github.com/smsaero/smsaero_rust"
+keywords = ["smsaero", "api", "client", "rust"]
+
+
+[dependencies]
+reqwest = { version = "0.12.5", features = ["json", "blocking"] }
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = "1.0.120"
+chrono = { version = "0.4.38", features = ["serde"] }
+url = "2.5.2"
