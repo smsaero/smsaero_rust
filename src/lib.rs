@@ -3,8 +3,8 @@ use reqwest::blocking::Client;
 use reqwest::header::{CONTENT_TYPE, USER_AGENT};
 use serde_json::json;
 use std::error::Error;
-use std::fmt;
 use std::error::Error as StdError;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct SmsAeroError {
@@ -19,7 +19,6 @@ impl fmt::Display for SmsAeroError {
 
 impl StdError for SmsAeroError {}
 
-
 pub struct SmsAero {
     pub email: String,
     pub api_key: String,
@@ -31,7 +30,12 @@ pub struct SmsAero {
 impl SmsAero {
     const SIGNATURE: &'static str = "Sms Aero";
 
-    pub fn new(email: String, api_key: String, url_gate: Option<String>, signature: Option<String>) -> Self {
+    pub fn new(
+        email: String,
+        api_key: String,
+        url_gate: Option<String>,
+        signature: Option<String>,
+    ) -> Self {
         SmsAero {
             email,
             api_key,
@@ -41,7 +45,12 @@ impl SmsAero {
         }
     }
 
-    fn request(&self, selector: &str, data: Option<serde_json::Value>, page: Option<i32>) -> Result<serde_json::Value, Box<dyn Error>> {
+    fn request(
+        &self,
+        selector: &str,
+        data: Option<serde_json::Value>,
+        page: Option<i32>,
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
         let url_base = format!(
             "https://{}:{}@gate.smsaero.ru/v2/",
             url::form_urlencoded::byte_serialize(self.email.as_bytes()).collect::<String>(),
@@ -52,7 +61,9 @@ impl SmsAero {
             url = format!("{}?page={}", url, page);
         }
 
-        let response = self.client.post(&url)
+        let response = self
+            .client
+            .post(&url)
             .header(CONTENT_TYPE, "application/json")
             .header(USER_AGENT, "SARustClient/1.0.0")
             .json(&data.unwrap_or_else(|| json!({})))
@@ -66,16 +77,30 @@ impl SmsAero {
 
     fn check_response(&self, content: &str) -> Result<(), Box<dyn Error>> {
         let response: serde_json::Value = serde_json::from_str(content)?;
-        if response.get("success").and_then(|s| s.as_bool()).unwrap_or(false) {
+        if response
+            .get("success")
+            .and_then(|s| s.as_bool())
+            .unwrap_or(false)
+        {
             Ok(())
         } else {
             Err(Box::new(SmsAeroError {
-                message: response.get("message").and_then(|m| m.as_str()).unwrap_or("Unknown error").to_string(),
+                message: response
+                    .get("message")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("Unknown error")
+                    .to_string(),
             }))
         }
     }
 
-    pub fn send_sms(&self, number: &str, text: &str, date_send: Option<DateTime<Utc>>, callback_url: Option<&str>) -> Result<serde_json::Value, Box<dyn Error>> {
+    pub fn send_sms(
+        &self,
+        number: &str,
+        text: &str,
+        date_send: Option<DateTime<Utc>>,
+        callback_url: Option<&str>,
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
         let mut data = json!({
             "number": number,
             "sign": self.signature,
@@ -94,7 +119,12 @@ impl SmsAero {
         self.request("sms/status", Some(json!({"id": sms_id})), None)
     }
 
-    pub fn sms_list(&self, number: Option<&str>, text: Option<&str>, page: Option<i32>) -> Result<serde_json::Value, Box<dyn Error>> {
+    pub fn sms_list(
+        &self,
+        number: Option<&str>,
+        text: Option<&str>,
+        page: Option<i32>,
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
         let mut data = serde_json::Map::new();
         if let Some(number) = number {
             data.insert("number".to_string(), json!(number));
@@ -118,8 +148,16 @@ impl SmsAero {
         self.request("cards", None, None)
     }
 
-    pub fn add_balance(&self, _sum: f64, card_id: i32) -> Result<serde_json::Value, Box<dyn Error>> {
-        self.request("balance/add", Some(json!({ "sum": _sum, "cardId": card_id })), None)
+    pub fn add_balance(
+        &self,
+        _sum: f64,
+        card_id: i32,
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
+        self.request(
+            "balance/add",
+            Some(json!({ "sum": _sum, "cardId": card_id })),
+            None,
+        )
     }
 
     pub fn tariffs(&self) -> Result<serde_json::Value, Box<dyn Error>> {
@@ -157,20 +195,24 @@ impl SmsAero {
         sname: Option<&str>,
         param1: Option<&str>,
         param2: Option<&str>,
-        param3: Option<&str>
+        param3: Option<&str>,
     ) -> Result<serde_json::Value, Box<dyn Error>> {
-        self.request("contact/add", Some(json!({
-            "number": number,
-            "groupId": group_id,
-            "birthday": birthday,
-            "sex": sex,
-            "lname": lname,
-            "fname": fname,
-            "sname": sname,
-            "param1": param1,
-            "param2": param2,
-            "param3": param3
-        })), None)
+        self.request(
+            "contact/add",
+            Some(json!({
+                "number": number,
+                "groupId": group_id,
+                "birthday": birthday,
+                "sex": sex,
+                "lname": lname,
+                "fname": fname,
+                "sname": sname,
+                "param1": param1,
+                "param2": param2,
+                "param3": param3
+            })),
+            None,
+        )
     }
 
     pub fn contact_delete(&self, contact_id: i32) -> Result<serde_json::Value, Box<dyn Error>> {
@@ -187,35 +229,43 @@ impl SmsAero {
         lname: Option<&str>,
         fname: Option<&str>,
         sname: Option<&str>,
-        page: Option<i32>
+        page: Option<i32>,
     ) -> Result<serde_json::Value, Box<dyn Error>> {
-        self.request("contact/list", Some(json!({
-            "number": number,
-            "groupId": group_id,
-            "birthday": birthday,
-            "sex": sex,
-            "operator": operator,
-            "lname": lname,
-            "fname": fname,
-            "sname": sname
-        })), page)
+        self.request(
+            "contact/list",
+            Some(json!({
+                "number": number,
+                "groupId": group_id,
+                "birthday": birthday,
+                "sex": sex,
+                "operator": operator,
+                "lname": lname,
+                "fname": fname,
+                "sname": sname
+            })),
+            page,
+        )
     }
 
     pub fn blacklist_add(&self, number: &str) -> Result<serde_json::Value, Box<dyn Error>> {
         self.request("blacklist/add", Some(json!({ "number": number })), None)
     }
 
-    pub fn blacklist_list(&self, number: Option<&str>, page: Option<i32>) -> Result<serde_json::Value, Box<dyn Error>> {
-        let data = if let Some(number) = number {
-            Some(json!({ "number": number }))
-        } else {
-            None
-        };
+    pub fn blacklist_list(
+        &self,
+        number: Option<&str>,
+        page: Option<i32>,
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
+        let data = number.map(|number| json!({ "number": number }));
         self.request("blacklist/list", data, page)
     }
 
     pub fn blacklist_delete(&self, blacklist_id: i32) -> Result<serde_json::Value, Box<dyn Error>> {
-        self.request("blacklist/delete", Some(json!({ "id": blacklist_id })), None)
+        self.request(
+            "blacklist/delete",
+            Some(json!({ "id": blacklist_id })),
+            None,
+        )
     }
 
     pub fn hlr_check(&self, number: &str) -> Result<serde_json::Value, Box<dyn Error>> {
@@ -244,7 +294,7 @@ impl SmsAero {
         sign_sms: Option<&str>,
         channel_sms: Option<&str>,
         text_sms: Option<&str>,
-        price_sms: Option<f64>
+        price_sms: Option<f64>,
     ) -> Result<serde_json::Value, Box<dyn Error>> {
         let data = json!({
             "sign": sign,
@@ -271,5 +321,31 @@ impl SmsAero {
 
     pub fn viber_list(&self, page: Option<i32>) -> Result<serde_json::Value, Box<dyn Error>> {
         self.request("viber/list", None, page)
+    }
+
+    pub fn send_telegram(
+        &self,
+        number: &str,
+        code: i32,
+        sign: Option<&str>,
+        text: Option<&str>,
+    ) -> Result<serde_json::Value, Box<dyn Error>> {
+        let mut data = json!({
+            "number": number,
+            "code": code,
+        });
+
+        if let Some(sign) = sign {
+            data["sign"] = json!(sign);
+        }
+        if let Some(text) = text {
+            data["text"] = json!(text);
+        }
+
+        self.request("telegram/send", Some(data), None)
+    }
+
+    pub fn telegram_status(&self, telegram_id: i32) -> Result<serde_json::Value, Box<dyn Error>> {
+        self.request("telegram/status", Some(json!({"id": telegram_id})), None)
     }
 }

@@ -32,7 +32,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         None,
     );
 
+    // Send SMS message
     match client.send_sms("70000000000", "Hello, world!", None, None) {
+        Ok(result) => println!("{}", result),
+        Err(e) => eprintln!("SmsAero error: {}", e),
+    }
+
+    // Send Telegram code
+    match client.send_telegram("70000000000", 1234, Some("SMS Aero"), Some("Ваш код 1234")) {
         Ok(result) => println!("{}", result),
         Err(e) => eprintln!("SmsAero error: {}", e),
     }
